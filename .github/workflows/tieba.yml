@@ -1,0 +1,91 @@
+name: Tieba scheduled reply
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only list candidates; do not reply"
+        required: true
+        type: choice
+        default: "true"
+        options:
+          - "true"
+          - "false"
+  schedule:
+    - cron: "52 6 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "37 12 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "47 19 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "24 7 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "13 13 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "33 21 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "41 8 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "6 15 * * *"
+      timezone: "Asia/Shanghai"
+    - cron: "18 22 * * *"
+      timezone: "Asia/Shanghai"
+
+concurrency:
+  group: tieba-scheduled-reply
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  reply:
+    runs-on: ubuntu-slim
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Check rotation schedule
+        id: gate
+        shell: bash
+        env:
+          SCHEDULE_EXPR: ${{ github.event.schedule }}
+        run: python3 -m src.schedule >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        if: steps.gate.outputs.active == 'true'
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Restore processed-thread state
+        if: steps.gate.outputs.active == 'true'
+        uses: actions/cache@v5
+        with:
+          path: .state
+          key: tieba-state-${{ github.run_id }}
+          restore-keys: |
+            tieba-state-
+
+      - name: Install dependencies
+        if: steps.gate.outputs.active == 'true'
+        run: python -m pip install -r requirements.txt
+
+      - name: Scan and optionally reply
+        if: steps.gate.outputs.active == 'true'
+        env:
+          BDUSS: ${{ secrets.BDUSS }}
+          TIEBA_USERNAME: ${{ vars.TIEBA_USERNAME }}
+          TIEBA_USER_ID: ${{ vars.TIEBA_USER_ID }}
+          TIEBA_FORUM: "hifi交易"
+          REPLY_CONTENT: "bd"
+          MAX_REPLIES: ${{ vars.MAX_REPLIES || '20' }}
+          THREAD_SCAN_LIMIT: "100"
+          MAX_THREAD_AGE_HOURS: "6"
+          REPLY_DELAY_MIN: ${{ vars.REPLY_DELAY_MIN || '5' }}
+          REPLY_DELAY_MAX: ${{ vars.REPLY_DELAY_MAX || '10' }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || vars.DRY_RUN || 'true' }}
+          SCHEDULE_EXPR: ${{ github.event.schedule }}
+        run: python -m src.main

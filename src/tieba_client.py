@@ -20,6 +20,7 @@ THREAD_LIST_URL = "https://c.tieba.baidu.com/c/f/frs/page"
 POST_LIST_URL = "https://c.tieba.baidu.com/c/f/pb/page"
 THREAD_URL = "https://tieba.baidu.com/p/{tid}"
 REPLY_URL = "https://tieba.baidu.com/f/commit/post/add"
+THREAD_PAGE_SIZE = 10
 
 
 class TiebaError(RuntimeError):
@@ -154,7 +155,13 @@ class TiebaClient:
                 "from": "tieba",
                 "kw": self.forum,
                 "pn": str(page),
-                "rn": str(min(100, limit)),
+                # The first FRS page is special: Tieba currently returns only
+                # 13 entries (including pinned threads) even when a much larger
+                # rn is requested.  Later pages still calculate their offset
+                # from rn, so rn=100 would jump straight to offset 100 and omit
+                # most recent threads.  A small fixed page size overlaps the
+                # special first page; tid de-duplication below removes repeats.
+                "rn": str(THREAD_PAGE_SIZE),
                 # Explicitly request creation-time order.  Without this the
                 # endpoint returns Tieba's smart/hot mixture.
                 "sort_type": "1",

@@ -89,7 +89,45 @@ def test_thread_list_uses_nested_pagination_and_sorts_newest_first(monkeypatch) 
 
     assert [thread.tid for thread in threads] == ["2", "1"]
     assert all(data["sort_type"] == "1" for data in sent_data)
+    assert all(data["rn"] == "10" for data in sent_data)
     assert all("q_type" not in data for data in sent_data)
+
+
+def test_thread_list_does_not_skip_after_special_first_page(monkeypatch) -> None:
+    client = TiebaClient("test", "hifi交易")
+    sent_data = []
+    first_page = [
+        {"tid": "900", "title": "top-1", "create_time": 1, "is_top": "1"},
+        {"tid": "901", "title": "top-2", "create_time": 1, "is_top": "1"},
+    ] + [
+        {"tid": str(tid), "title": str(tid), "create_time": tid, "is_top": "0"}
+        for tid in range(30, 19, -1)
+    ]
+    pages = iter(
+        [
+            {"error_code": "0", "thread_list": first_page, "page": {"has_more": 1}},
+            {
+                "error_code": "0",
+                "thread_list": [
+                    {"tid": str(tid), "title": str(tid), "create_time": tid, "is_top": "0"}
+                    for tid in range(21, 11, -1)
+                ],
+                "page": {"has_more": 0},
+            },
+        ]
+    )
+
+    def fake_request(*args, **kwargs):
+        sent_data.append(kwargs["data"])
+        return next(pages)
+
+    monkeypatch.setattr(client, "_json_request", fake_request)
+
+    threads = client.list_threads(limit=19)
+
+    assert [int(thread.tid) for thread in threads] == list(range(30, 11, -1))
+    assert [data["pn"] for data in sent_data] == ["1", "2"]
+    assert all(data["rn"] == "10" for data in sent_data)
 
 
 def test_reply_accepts_numeric_zero_success(monkeypatch) -> None:

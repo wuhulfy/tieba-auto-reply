@@ -77,15 +77,15 @@ jobs:
         if: steps.gate.outputs.active == 'true'
         env:
           BDUSS: ${{ secrets.BDUSS }}
-          TIEBA_USERNAME: ${{ vars.TIEBA_USERNAME }}
-          TIEBA_USER_ID: ${{ vars.TIEBA_USER_ID }}
+          TIEBA_USERNAME: ${{ secrets.TIEBA_USERNAME }}
+          TIEBA_USER_ID: ${{ secrets.TIEBA_USER_ID }}
           TIEBA_FORUM: "hifi交易"
           REPLY_CONTENT: "bd"
-          MAX_REPLIES: ${{ vars.MAX_REPLIES || '20' }}
+          MAX_REPLIES: ${{ secrets.MAX_REPLIES  }}
           THREAD_SCAN_LIMIT: "100"
           MAX_THREAD_AGE_HOURS: "6"
-          REPLY_DELAY_MIN: ${{ vars.REPLY_DELAY_MIN || '5' }}
-          REPLY_DELAY_MAX: ${{ vars.REPLY_DELAY_MAX || '10' }}
+          REPLY_DELAY_MIN: ${{ secrets.REPLY_DELAY_MIN }}
+          REPLY_DELAY_MAX: ${{ secrets.REPLY_DELAY_MAX  }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || vars.DRY_RUN || 'true' }}
           SCHEDULE_EXPR: ${{ github.event.schedule }}
         run: python -m src.main

@@ -20,8 +20,8 @@
 
 1. 创建公开仓库并推送本项目。
 2. 在 `Settings -> Secrets and variables -> Actions -> Secrets` 新建 `BDUSS`。
-3. 在 `Variables` 新建 `TIEBA_USERNAME`，值为你在帖子中显示的精确昵称（作为兼容后备）。
-4. 建议在 `Variables` 新建 `TIEBA_USER_ID`，填账号的纯数字用户 ID；未设置时程序会尝试自动获取。
+3. 在 `Secrets` 新建 `TIEBA_USERNAME`，值为你在帖子中显示的精确昵称（作为兼容后备）。
+4. 建议在 `Secrets` 新建 `TIEBA_USER_ID`，填账号的纯数字用户 ID；未设置时程序会尝试自动获取。
 5. 在 `Variables` 中可设置 `MAX_REPLIES`、`REPLY_DELAY_MIN` 和 `REPLY_DELAY_MAX`；默认分别为 `20`、`5`、`10`。
 6. 在 `Variables` 新建 `DRY_RUN`，首先设为 `true`。
 7. 手动运行 workflow，保持 `dry_run=true`。预演会逐帖检查本账号是否已回复，并只列出确认未回复的帖子。
@@ -58,6 +58,7 @@ python -m src.main
 
 ## 限制
 
+由于GitHub Action定时操作可能存在一定延时/丢失的情况，故更建议手动执行。
 贴吧的签到、列表和回复接口不是面向该项目的稳定公开 API，页面或风控改动后可能需要修改。项目中所有贴吧请求均使用 HTTPS。
 
 ## 来源说明

@@ -83,7 +83,7 @@ jobs:
           REPLY_CONTENT: "bd"
           MAX_REPLIES: ${{ vars.MAX_REPLIES || '20'  }}
           THREAD_SCAN_LIMIT: "100"
-          MAX_THREAD_AGE_HOURS: "6"
+          MAX_THREAD_AGE_HOURS: "12"
           REPLY_DELAY_MIN: ${{ vars.REPLY_DELAY_MIN || '5' }}
           REPLY_DELAY_MAX: ${{ vars.REPLY_DELAY_MAX || '12' }}
           DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || vars.DRY_RUN || 'true' }}

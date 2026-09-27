@@ -103,18 +103,28 @@ def run() -> int:
         return 1
 
     success = 0
+    consecutive_reply_failures = 0
     for thread in candidates:
         if success >= config.max_replies:
             break
+
         try:
             if client.thread_has_reply_from(thread.tid, config.username, current_user_id):
                 logger.info("已检测到本账号回复，跳过 tid=%s", thread.tid)
                 state.mark(thread.tid)
                 continue
+        except (RiskControlError, AuthenticationError) as exc:
+            logger.error("%s；当次任务立即停止", exc)
+            break
+        except TiebaError as exc:
+            logger.error("tid=%s: %s；无法安全检查是否重复回复，当次任务停止", thread.tid, exc)
+            break
 
+        try:
             client.reply(thread.tid, fid, config.reply_content, tbs)
             state.mark(thread.tid)
             success += 1
+            consecutive_reply_failures = 0
             logger.info("回复成功 tid=%s title=%s", thread.tid, thread.title[:60])
             if success < config.max_replies:
                 time.sleep(random.uniform(config.delay_min, config.delay_max))
@@ -122,8 +132,21 @@ def run() -> int:
             logger.error("%s；当次任务立即停止", exc)
             break
         except TiebaError as exc:
-            logger.error("tid=%s: %s；当次任务停止", thread.tid, exc)
-            break
+            consecutive_reply_failures += 1
+            if consecutive_reply_failures >= 2:
+                logger.error(
+                    "tid=%s: %s；连续第 %d 次回复失败，当次任务停止",
+                    thread.tid,
+                    exc,
+                    consecutive_reply_failures,
+                )
+                break
+            logger.warning(
+                "tid=%s: %s；首次回复失败，跳过并尝试下一帖",
+                thread.tid,
+                exc,
+            )
+            time.sleep(random.uniform(config.delay_min, config.delay_max))
 
     logger.info("当次完成：成功回复 %d 帖", success)
     return 0

@@ -31,7 +31,15 @@ def is_active_schedule(schedule_expr: str, now: datetime | None = None) -> bool:
 def main() -> None:
     expression = os.getenv("SCHEDULE_EXPR", "").strip()
     now = datetime.now(BEIJING)
-    print(f"active={'true' if is_active_schedule(expression, now) else 'false'}")
+    # Avoid boolean output values such as "true"/"false". If a repository
+    # secret contains one of those short values, GitHub can suppress a matching
+    # step output as a potential secret leak and skip every guarded step.
+    decision = (
+        "execute_this_rotation"
+        if is_active_schedule(expression, now)
+        else "skip_this_rotation"
+    )
+    print(f"decision={decision}")
     print(f"rotation_group={rotation_group(now.date())}")
 
 

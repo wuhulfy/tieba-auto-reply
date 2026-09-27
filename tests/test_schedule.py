@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from src.schedule import BEIJING, SCHEDULE_GROUPS, is_active_schedule, rotation_group
+from src.schedule import BEIJING, SCHEDULE_GROUPS, is_active_schedule, main, rotation_group
 
 
 def test_rotation_is_continuous_across_month_boundary() -> None:
@@ -27,3 +27,13 @@ def test_scheduled_run_outside_window_is_inactive() -> None:
     group = rotation_group(now.date())
     active_expr = next(iter(SCHEDULE_GROUPS[group]))
     assert not is_active_schedule(active_expr, now)
+
+
+def test_cli_uses_non_boolean_decision_output(monkeypatch, capsys) -> None:
+    monkeypatch.delenv("SCHEDULE_EXPR", raising=False)
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "decision=execute_this_rotation" in output
+    assert "active=true" not in output
